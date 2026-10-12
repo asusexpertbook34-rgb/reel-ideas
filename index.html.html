@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reel Idea Generator</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e1306c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#faf7f2;--card:#fff;--text:#1d1b19;--muted:#6b665f;--accent:#e1306c;--border:#e8e2d9;--chip:#f1ebe2}
+@media (prefers-color-scheme:dark){:root{--bg:#15130f;--card:#201d18;--text:#f3eee6;--muted:#a39d92;--accent:#ff5c93;--border:#34302a;--chip:#2b2721}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Devanagari","Noto Sans Bengali","Noto Sans Telugu","Noto Sans Tamil","Noto Sans Gujarati","Noto Sans Kannada","Noto Sans Oriya","Noto Sans Malayalam","Noto Sans Gurmukhi","Noto Naskh Arabic",sans-serif;line-height:1.6}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;margin:8px 0 4px}
+.sub{color:var(--muted);margin:0 0 16px}
+label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+select,input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:1rem;font-family:inherit;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.chip{border:1px solid var(--border);background:var(--chip);color:var(--text);padding:8px 14px;border-radius:999px;font-size:.95rem;cursor:pointer;font-family:inherit}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.go{width:100%;padding:14px;border:0;border-radius:14px;background:var(--accent);color:#fff;font-size:1.05rem;font-weight:600;cursor:pointer;margin-bottom:20px;font-family:inherit}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px}
+.tag{font-size:.75rem;color:var(--muted);margin:10px 0 2px}
+.hook{font-size:1.1rem;font-weight:600;margin:0}
+.card p{margin:0}
+.hash{color:var(--accent);word-break:break-word;direction:ltr;text-align:start}
+.acts{display:flex;gap:8px;margin-top:12px}
+.acts button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--chip);color:var(--text);cursor:pointer;font-size:.9rem;font-family:inherit}
+h2{font-size:1.1rem;margin:28px 0 10px}
+.empty{color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<h1 id="title"></h1>
+<p class="sub" id="sub"></p>
+
+<label id="langLabel" for="lang"></label>
+<select id="lang"></select>
+
+<div class="chips" id="chips"></div>
+<input id="topic">
+<button class="go" id="go"></button>
+
+<div id="out"></div>
+<h2 id="savedTitle"></h2>
+<div id="saved"></div>
+</main>
+
+<script>
+/* ---------- Data ---------- */
+const LANGS=[["en","English"],["hi","हिन्दी"],["hn","Hinglish"],["bn","বাংলা"],["mr","मराठी"],["te","తెలుగు"],["ta","தமிழ்"],["gu","ગુજરાતી"],["ur","اردو"],["kn","ಕನ್ನಡ"],["or","ଓଡ଼ିଆ"],["ml","മലയാളം"],["pa","ਪੰਜਾਬੀ"]];
+const LTAG={en:"englishreels",hi:"hindireels",hn:"hinglish",bn:"bengalireels",mr:"marathireels",te:"telugureels",ta:"tamilreels",gu:"gujaratireels",ur:"urdureels",kn:"kannadareels",or:"odiareels",ml:"malayalamreels",pa:"punjabireels"};
+
+/* Niches: topics are common terms (English), hashtags are English */
+const NICHES=[
+{k:"fit",t:["weight loss","home workout","protein diet","pushups","morning routine","belly fat"],h:["fitness","gymmotivation","homeworkout","fitnessindia","healthylifestyle"]},
+{k:"com",t:["college life","boss at office","wedding season","mom vs dad","roommates","exam time"],h:["comedy","funnyreels","relatable","desihumour","memes"]},
+{k:"food",t:["street food","5 minute recipe","chai","Maggi hack","hostel cooking","healthy snacks"],h:["foodie","foodreels","recipe","delhifood","streetfood"]},
+{k:"study",t:["study timetable","memory trick","board exams","note making","focus","procrastination"],h:["studymotivation","studytips","student","exampreparation","studygram"]},
+{k:"tech",t:["hidden phone feature","free AI tools","WhatsApp trick","Instagram growth","laptop speed","money saving apps"],h:["tech","techtips","ai","smartphone","techindia"]},
+{k:"money",t:["saving money","SIP","side income","budgeting","student expenses","credit card"],h:["money","finance","investing","savings","financeindia"]},
+{k:"travel",t:["Delhi trip","budget trip","hidden places","train journey","Manali","solo trip"],h:["travel","travelreels","explore","incredibleindia","budgettravel"]},
+{k:"mot",t:["discipline","after failure","waking up early","confidence","self improvement","consistency"],h:["motivation","mindset","success","selfgrowth","inspiration"]},
+{k:"fash",t:["budget outfits","thrift shopping","skincare routine","college look","wedding outfit","sneakers"],h:["fashion","ootd","styletips","skincare","fashionindia"]},
+{k:"biz",t:["small business","Instagram selling","startup idea","getting customers","branding","freelancing"],h:["business","entrepreneur","startup","smallbusiness","sidehustle"]}
+];
+const TIMES=["12–2 PM","7–9 PM","9–11 PM"];
+
+/* UI order: title, sub, placeholder, go, hook, format, tags, time, copy, copied, save, remove, savedTitle, none, language */
+const T={
+en:{ui:["🎬 Reel Idea Generator","5 fresh reel ideas daily: hook, format, caption and hashtags. Free and offline.","Your own topic (optional), e.g. protein, UPSC, momos","✨ Give me 5 new ideas","Hook","Format","Hashtags","Best time to post","📋 Copy caption","✅ Copied","⭐ Save","🗑 Remove","⭐ Saved ideas","No saved ideas yet.","Language"],
+n:["Fitness","Comedy","Food","Study","Tech","Money","Travel","Motivation","Fashion","Business"],
+h:["If you're making this mistake in {t}, watch this","99% of people don't know this about {t}","The easiest way to do {t} in 30 seconds","3 biggest mistakes in {t}","I tried {t} for 7 days, see the result","{t}: myth vs reality","I wish I knew this about {t} earlier","Stop! Watch this before {t}","POV: you're trying {t} for the first time","The {t} trick nobody tells you","{t} for beginners: start here","Why {t} isn't working for you","Don't spend a rupee on {t} until you see this","This {t} hack will save your time"],
+f:["Talking head: look at the camera, write key words on screen","List: 3 points, ~5 sec each, number on screen","Before/After: show the problem, then the solution","7-day challenge: quick Day 1 to Day 7 montage","Myth vs Fact: split screen","POV skit: one scene, one punchline","Tutorial: 3 steps with voiceover","Storytime: hook, twist, lesson"],
+c:["Save this for later 📌","Follow for part 2 🔥","Send to a friend who needs this 👇","Comment if you didn't know this 💬","Which topic next? Tell me below ✍️"]},
+hi:{ui:["🎬 रील आइडिया जनरेटर","रोज़ 5 नए रील आइडिया: हुक, फ़ॉर्मेट, कैप्शन और हैशटैग। मुफ़्त और ऑफ़लाइन।","अपना टॉपिक लिखें (वैकल्पिक), जैसे: protein, UPSC, momos","✨ 5 नए आइडिया दो","हुक","फ़ॉर्मेट","हैशटैग","पोस्ट करने का सबसे अच्छा समय","📋 कैप्शन कॉपी","✅ कॉपी हो गया","⭐ सेव","🗑 हटाएं","⭐ सेव किए आइडिया","अभी कोई सेव किया आइडिया नहीं है।","भाषा"],
+n:["फिटनेस","कॉमेडी","खाना","पढ़ाई","टेक","पैसा","यात्रा","मोटिवेशन","फैशन","बिज़नेस"],
+h:["अगर आप {t} में ये गलती कर रहे हैं, तो ये वीडियो ज़रूर देखें","{t} के बारे में 99% लोग ये नहीं जानते","सिर्फ़ 30 सेकंड में {t} का सबसे आसान तरीका","{t} में सबसे ज़्यादा होने वाली 3 गलतियाँ","मैंने 7 दिन {t} आज़माया, नतीजा देखिए","{t}: मिथ बनाम सच","काश मुझे {t} के बारे में ये पहले पता होता","रुकिए! {t} से पहले ये देख लीजिए","POV: आप पहली बार {t} आज़मा रहे हैं","{t} की वो ट्रिक जो कोई नहीं बताता","शुरुआत करने वालों के लिए {t}: यहाँ से शुरू करें","{t} आपके लिए काम क्यों नहीं कर रहा","{t} पर एक रुपया खर्च करने से पहले ये देख लें","{t} का ये हैक आपका समय बचाएगा"],
+f:["टॉकिंग हेड: कैमरे में देखें, ज़रूरी शब्द स्क्रीन पर लिखें","लिस्ट: 3 पॉइंट, हर एक ~5 सेकंड, नंबर स्क्रीन पर","बिफ़ोर/आफ़्टर: पहले समस्या, फिर समाधान","7 दिन का चैलेंज: Day 1 से Day 7 का मोंटाज","मिथ बनाम फ़ैक्ट: स्प्लिट स्क्रीन","POV स्किट: एक सीन, एक पंचलाइन","ट्यूटोरियल: वॉइसओवर के साथ 3 स्टेप","स्टोरीटाइम: हुक, ट्विस्ट, सीख"],
+c:["सेव कर लें, बाद में काम आएगा 📌","फ़ॉलो करें, पार्ट 2 कल आएगा 🔥","अपने उस दोस्त को भेजें जिसे ये चाहिए 👇","कमेंट करें अगर आपको भी ये नहीं पता था 💬","अगला टॉपिक कौन सा चाहिए? नीचे बताएं ✍️"]},
+hn:{ui:["🎬 Reel Idea Generator","Roz ke 5 naye reel ideas: hook, format, caption aur hashtags. Free aur offline.","Apna topic likho (optional), jaise: protein, UPSC, momos","✨ 5 naye ideas do","Hook","Format","Hashtags","Post karne ka best time","📋 Caption copy","✅ Copy ho gaya","⭐ Save","🗑 Hatao","⭐ Saved ideas","Abhi koi saved idea nahi hai.","Bhasha / Language"],
+n:["Fitness","Comedy","Food","Study","Tech","Money","Travel","Motivation","Fashion","Business"],
+h:["Agar tum {t} mein ye galti kar rahe ho, to ye video zaroor dekho","{t} ke baare mein 99% log ye nahi jaante","Sirf 30 second mein {t} ka sabse easy tarika","{t} mein sabse zyada hone wali 3 galtiyan","Maine 7 din {t} try kiya, result dekho","{t}: myth vs reality","Kaash mujhe {t} ke baare mein ye pehle pata hota","Ruko! {t} se pehle ye dekho","POV: tum pehli baar {t} try kar rahe ho","{t} ka ek trick jo koi nahi batata","Beginners ke liye {t}: yahan se shuru karo","{t} tumhare liye kaam kyun nahi kar raha","{t} par ek rupaya kharch karne se pehle ye dekho","{t} ka ye hack tumhara time bachayega"],
+f:["Talking head: camera mein dekho, key words screen par likho","List: 3 points, har ek ~5 sec, number screen par","Before/After: pehle problem, phir solution","7-day challenge: Day 1 se Day 7 ka quick montage","Myth vs Fact: split screen","POV skit: ek scene, ek punchline","Tutorial: 3 steps voiceover ke saath","Storytime: hook, twist, lesson"],
+c:["Save kar lo, baad mein kaam aayega 📌","Follow karo, part 2 kal aayega 🔥","Apne us dost ko bhejo jise ye chahiye 👇","Comment karo agar tumhe bhi ye pata nahi tha 💬","Agla topic kaunsa chahiye? Neeche batao ✍️"]},
+bn:{ui:["🎬 রিল আইডিয়া জেনারেটর","প্রতিদিন ৫টি নতুন রিল আইডিয়া: হুক, ফরম্যাট, ক্যাপশন ও হ্যাশট্যাগ। বিনামূল্যে ও অফলাইন।","নিজের টপিক লিখুন (ঐচ্ছিক), যেমন: protein, UPSC, momos","✨ ৫টি নতুন আইডিয়া দিন","হুক","ফরম্যাট","হ্যাশট্যাগ","পোস্ট করার সেরা সময়","📋 ক্যাপশন কপি","✅ কপি হয়েছে","⭐ সেভ","🗑 মুছুন","⭐ সেভ করা আইডিয়া","এখনও কোনো সেভ করা আইডিয়া নেই।","ভাষা"],
+n:["ফিটনেস","কমেডি","খাবার","পড়াশোনা","টেক","টাকা","ভ্রমণ","মোটিভেশন","ফ্যাশন","ব্যবসা"],
+h:["আপনি যদি {t}-এ এই ভুলটা করে থাকেন, তাহলে ভিডিওটা দেখুন","{t} নিয়ে ৯৯% মানুষ এটা জানে না","মাত্র ৩০ সেকেন্ডে {t}-এর সবচেয়ে সহজ উপায়","{t}-এ সবচেয়ে বেশি হওয়া ৩টি ভুল","আমি ৭ দিন {t} চেষ্টা করলাম, ফল দেখুন","{t}: মিথ বনাম বাস্তবতা","{t} নিয়ে এটা আগে জানলে ভালো হতো","থামুন! {t}-এর আগে এটা দেখুন","POV: আপনি প্রথমবার {t} করছেন","{t}-এর যে ট্রিকটা কেউ বলে না","নতুনদের জন্য {t}: এখান থেকে শুরু করুন","{t} আপনার কাজ করছে না কেন","{t}-এ এক টাকা খরচ করার আগে এটা দেখুন","{t}-এর এই হ্যাক আপনার সময় বাঁচাবে"],
+f:["টকিং হেড: ক্যামেরার দিকে তাকান, জরুরি শব্দ স্ক্রিনে লিখুন","লিস্ট: ৩টি পয়েন্ট, প্রতিটি ~৫ সেকেন্ড, স্ক্রিনে নম্বর","বিফোর/আফটার: আগে সমস্যা, তারপর সমাধান","৭ দিনের চ্যালেঞ্জ: Day 1 থেকে Day 7 মন্টাজ","মিথ বনাম ফ্যাক্ট: স্প্লিট স্ক্রিন","POV স্কিট: একটি দৃশ্য, একটি পাঞ্চলাইন","টিউটোরিয়াল: ভয়েসওভারসহ ৩ ধাপ","স্টোরিটাইম: হুক, টুইস্ট, শিক্ষা"],
+c:["সেভ করে রাখুন, পরে কাজে লাগবে 📌","ফলো করুন, পার্ট ২ কাল আসছে 🔥","যে বন্ধুর এটা দরকার তাকে পাঠান 👇","আপনিও না জানলে কমেন্ট করুন 💬","পরের টপিক কোনটা চান? নিচে জানান ✍️"]},
+mr:{ui:["🎬 रील आयडिया जनरेटर","दररोज ५ नवीन रील आयडिया: हुक, फॉरमॅट, कॅप्शन आणि हॅशटॅग. मोफत आणि ऑफलाइन.","तुमचा टॉपिक लिहा (ऐच्छिक), उदा: protein, UPSC, momos","✨ ५ नवीन आयडिया द्या","हुक","फॉरमॅट","हॅशटॅग","पोस्ट करण्याची सर्वोत्तम वेळ","📋 कॅप्शन कॉपी","✅ कॉपी झालं","⭐ सेव्ह","🗑 काढा","⭐ सेव्ह केलेल्या आयडिया","अजून कोणतीही सेव्ह केलेली आयडिया नाही.","भाषा"],
+n:["फिटनेस","कॉमेडी","खाद्य","अभ्यास","टेक","पैसा","प्रवास","प्रेरणा","फॅशन","व्यवसाय"],
+h:["तुम्ही {t} मध्ये ही चूक करत असाल, तर हा व्हिडिओ नक्की पहा","{t} बद्दल ९९% लोकांना हे माहीत नसतं","फक्त ३० सेकंदात {t} करण्याचा सर्वात सोपा मार्ग","{t} मध्ये सर्वात जास्त होणाऱ्या ३ चुका","मी ७ दिवस {t} करून पाहिलं, निकाल बघा","{t}: समज विरुद्ध वास्तव","{t} बद्दल हे आधी कळलं असतं तर...","थांबा! {t} आधी हे पहा","POV: तुम्ही पहिल्यांदा {t} करून पाहत आहात","{t} ची ती ट्रिक जी कोणीच सांगत नाही","नवशिक्यांसाठी {t}: इथून सुरुवात करा","{t} तुमच्यासाठी का काम करत नाही","{t} वर एक रुपया खर्च करण्याआधी हे पहा","{t} चा हा हॅक तुमचा वेळ वाचवेल"],
+f:["टॉकिंग हेड: कॅमेऱ्याकडे बघा, महत्त्वाचे शब्द स्क्रीनवर लिहा","यादी: ३ मुद्दे, प्रत्येकी ~५ सेकंद, स्क्रीनवर क्रमांक","आधी/नंतर: आधी समस्या, मग उपाय","७ दिवसांचं चॅलेंज: Day 1 ते Day 7 मोंटाज","मिथ विरुद्ध फॅक्ट: स्प्लिट स्क्रीन","POV स्किट: एक सीन, एक पंचलाइन","ट्युटोरियल: व्हॉइसओव्हरसह ३ स्टेप्स","स्टोरीटाइम: हुक, ट्विस्ट, धडा"],
+c:["सेव्ह करा, नंतर कामाला येईल 📌","फॉलो करा, पार्ट २ उद्या येईल 🔥","ज्या मित्राला हे हवं त्याला पाठवा 👇","तुम्हालाही हे माहीत नव्हतं तर कमेंट करा 💬","पुढचा टॉपिक कोणता हवा? खाली सांगा ✍️"]},
+te:{ui:["🎬 రీల్ ఐడియా జనరేటర్","ప్రతిరోజూ 5 కొత్త రీల్ ఐడియాలు: హుక్, ఫార్మాట్, క్యాప్షన్, హ్యాష్‌ట్యాగ్‌లు. ఉచితం, ఆఫ్‌లైన్.","మీ టాపిక్ రాయండి (ఐచ్ఛికం), ఉదా: protein, UPSC, momos","✨ 5 కొత్త ఐడియాలు ఇవ్వండి","హుక్","ఫార్మాట్","హ్యాష్‌ట్యాగ్‌లు","పోస్ట్ చేయడానికి ఉత్తమ సమయం","📋 క్యాప్షన్ కాపీ","✅ కాపీ అయింది","⭐ సేవ్","🗑 తొలగించు","⭐ సేవ్ చేసిన ఐడియాలు","ఇంకా సేవ్ చేసిన ఐడియాలు లేవు.","భాష"],
+n:["ఫిట్‌నెస్","కామెడీ","ఫుడ్","చదువు","టెక్","డబ్బు","ప్రయాణం","ప్రేరణ","ఫ్యాషన్","వ్యాపారం"],
+h:["మీరు {t}లో ఈ తప్పు చేస్తుంటే, ఈ వీడియో తప్పక చూడండి","{t} గురించి 99% మందికి ఇది తెలియదు","కేవలం 30 సెకన్లలో {t} చేయడానికి సులభమైన మార్గం","{t}లో ఎక్కువగా జరిగే 3 తప్పులు","నేను 7 రోజులు {t} ట్రై చేశాను, ఫలితం చూడండి","{t}: అపోహ vs వాస్తవం","{t} గురించి ఇది ముందే తెలిసి ఉంటే బాగుండేది","ఆగండి! {t} ముందు ఇది చూడండి","POV: మీరు మొదటిసారి {t} ట్రై చేస్తున్నారు","{t}లో ఎవరూ చెప్పని ట్రిక్","బిగినర్స్ కోసం {t}: ఇక్కడ నుండి మొదలుపెట్టండి","{t} మీకు ఎందుకు పనిచేయడం లేదు","{t} మీద ఒక్క రూపాయి ఖర్చు చేసే ముందు ఇది చూడండి","{t} హ్యాక్ మీ సమయాన్ని ఆదా చేస్తుంది"],
+f:["టాకింగ్ హెడ్: కెమెరా వైపు చూడండి, ముఖ్య పదాలు స్క్రీన్‌పై రాయండి","లిస్ట్: 3 పాయింట్లు, ఒక్కోటి ~5 సెకన్లు, స్క్రీన్‌పై నంబర్","బిఫోర్/ఆఫ్టర్: ముందు సమస్య, తర్వాత పరిష్కారం","7 రోజుల ఛాలెంజ్: Day 1 నుండి Day 7 మాంటేజ్","మిథ్ vs ఫ్యాక్ట్: స్ప్లిట్ స్క్రీన్","POV స్కిట్: ఒక సీన్, ఒక పంచ్‌లైన్","ట్యుటోరియల్: వాయిస్‌ఓవర్‌తో 3 స్టెప్స్","స్టోరీటైమ్: హుక్, ట్విస్ట్, పాఠం"],
+c:["సేవ్ చేసుకోండి, తర్వాత పనికొస్తుంది 📌","ఫాలో అవ్వండి, పార్ట్ 2 రేపు వస్తుంది 🔥","ఇది అవసరమైన మీ ఫ్రెండ్‌కి పంపండి 👇","మీకు కూడా ఇది తెలియకపోతే కామెంట్ చేయండి 💬","తర్వాతి టాపిక్ ఏది కావాలి? కింద చెప్పండి ✍️"]},
+ta:{ui:["🎬 ரீல் ஐடியா ஜெனரேட்டர்","தினமும் 5 புதிய ரீல் ஐடியாக்கள்: ஹுக், ஃபார்மேட், கேப்ஷன், ஹேஷ்டேக். இலவசம், ஆஃப்லைன்.","உங்கள் டாபிக்கை எழுதுங்கள் (விருப்பம்), எ.கா: protein, UPSC, momos","✨ 5 புதிய ஐடியாக்கள் கொடு","ஹுக்","ஃபார்மேட்","ஹேஷ்டேக்","பதிவிட சிறந்த நேரம்","📋 கேப்ஷன் காப்பி","✅ காப்பி ஆனது","⭐ சேவ்","🗑 நீக்கு","⭐ சேமித்த ஐடியாக்கள்","இன்னும் சேமித்த ஐடியாக்கள் இல்லை.","மொழி"],
+n:["ஃபிட்னஸ்","காமெடி","உணவு","படிப்பு","டெக்","பணம்","பயணம்","ஊக்கம்","ஃபேஷன்","வணிகம்"],
+h:["{t}-ல் இந்தத் தவறை நீங்கள் செய்கிறீர்கள் என்றால், இந்த வீடியோவைப் பாருங்கள்","{t} பற்றி 99% பேருக்கு இது தெரியாது","வெறும் 30 வினாடிகளில் {t} செய்ய எளிய வழி","{t}-ல் அதிகம் நடக்கும் 3 தவறுகள்","நான் 7 நாட்கள் {t} முயற்சி செய்தேன், முடிவைப் பாருங்கள்","{t}: கட்டுக்கதை vs உண்மை","{t} பற்றி இதை முன்பே தெரிந்திருந்தால் நன்றாக இருக்கும்","நில்லுங்கள்! {t} செய்வதற்கு முன் இதைப் பாருங்கள்","POV: நீங்கள் முதல் முறையாக {t} முயற்சிக்கிறீர்கள்","{t}-ல் யாரும் சொல்லாத ஒரு ட்ரிக்","ஆரம்பநிலையாளர்களுக்கு {t}: இங்கிருந்து தொடங்குங்கள்","{t} உங்களுக்கு ஏன் வேலை செய்யவில்லை","{t}-க்கு ஒரு ரூபாய் செலவு செய்வதற்கு முன் இதைப் பாருங்கள்","இந்த {t} ஹேக் உங்கள் நேரத்தை மிச்சப்படுத்தும்"],
+f:["டாக்கிங் ஹெட்: கேமராவைப் பாருங்கள், முக்கிய வார்த்தைகளை திரையில் எழுதுங்கள்","பட்டியல்: 3 புள்ளிகள், ஒவ்வொன்றும் ~5 வினாடி, திரையில் எண்","முன்/பின்: முதலில் பிரச்சனை, பிறகு தீர்வு","7 நாள் சவால்: Day 1 முதல் Day 7 மாண்டேஜ்","கட்டுக்கதை vs உண்மை: ஸ்ப்ளிட் ஸ்கிரீன்","POV ஸ்கிட்: ஒரு காட்சி, ஒரு பஞ்ச்லைன்","டுடோரியல்: வாய்ஸ்ஓவருடன் 3 படிகள்","ஸ்டோரிடைம்: ஹுக், ட்விஸ்ட், பாடம்"],
+c:["சேவ் செய்து வையுங்கள், பிறகு உதவும் 📌","ஃபாலோ செய்யுங்கள், பார்ட் 2 நாளை வரும் 🔥","இது தேவைப்படும் நண்பருக்கு அனுப்புங்கள் 👇","உங்களுக்கும் இது தெரியாது என்றால் கமெண்ட் செய்யுங்கள் 💬","அடுத்த டாபிக் எது வேண்டும்? கீழே சொல்லுங்கள் ✍️"]},
+gu:{ui:["🎬 રીલ આઇડિયા જનરેટર","દરરોજ 5 નવા રીલ આઇડિયા: હૂક, ફોર્મેટ, કેપ્શન અને હેશટેગ. મફત અને ઑફલાઇન.","તમારો ટોપિક લખો (વૈકલ્પિક), જેમ કે: protein, UPSC, momos","✨ 5 નવા આઇડિયા આપો","હૂક","ફોર્મેટ","હેશટેગ","પોસ્ટ કરવાનો શ્રેષ્ઠ સમય","📋 કેપ્શન કૉપી","✅ કૉપી થઈ ગયું","⭐ સેવ","🗑 કાઢી નાખો","⭐ સેવ કરેલા આઇડિયા","હજી કોઈ સેવ કરેલો આઇડિયા નથી.","ભાષા"],
+n:["ફિટનેસ","કોમેડી","ખોરાક","અભ્યાસ","ટેક","પૈસા","પ્રવાસ","પ્રેરણા","ફેશન","વ્યવસાય"],
+h:["જો તમે {t}માં આ ભૂલ કરી રહ્યા છો, તો આ વીડિયો જરૂર જુઓ","{t} વિશે 99% લોકો આ જાણતા નથી","માત્ર 30 સેકન્ડમાં {t}નો સૌથી સરળ રસ્તો","{t}માં સૌથી વધુ થતી 3 ભૂલો","મેં 7 દિવસ {t} અજમાવ્યું, પરિણામ જુઓ","{t}: માન્યતા વિરુદ્ધ હકીકત","કાશ મને {t} વિશે આ પહેલાં ખબર હોત","અટકો! {t} પહેલાં આ જુઓ","POV: તમે પહેલી વાર {t} અજમાવી રહ્યા છો","{t}ની એ ટ્રિક જે કોઈ કહેતું નથી","શરૂઆત કરનારા માટે {t}: અહીંથી શરૂ કરો","{t} તમારા માટે કેમ કામ નથી કરતું","{t} પર એક રૂપિયો ખર્ચતાં પહેલાં આ જુઓ","{t}ની આ હેક તમારો સમય બચાવશે"],
+f:["ટોકિંગ હેડ: કેમેરા સામે જુઓ, મુખ્ય શબ્દો સ્ક્રીન પર લખો","લિસ્ટ: 3 પોઇન્ટ, દરેક ~5 સેકન્ડ, સ્ક્રીન પર નંબર","બિફોર/આફ્ટર: પહેલાં સમસ્યા, પછી ઉકેલ","7 દિવસનો ચેલેન્જ: Day 1 થી Day 7 મોન્ટાજ","માન્યતા વિરુદ્ધ હકીકત: સ્પ્લિટ સ્ક્રીન","POV સ્કિટ: એક સીન, એક પંચલાઇન","ટ્યુટોરિયલ: વોઇસઓવર સાથે 3 સ્ટેપ","સ્ટોરીટાઇમ: હૂક, ટ્વિસ્ટ, શીખ"],
+c:["સેવ કરી લો, પછી કામ આવશે 📌","ફોલો કરો, પાર્ટ 2 કાલે આવશે 🔥","જેને આ જોઈએ તે મિત્રને મોકલો 👇","તમને પણ આ ખબર નહોતી તો કમેન્ટ કરો 💬","આગળનો ટોપિક કયો જોઈએ? નીચે જણાવો ✍️"]},
+ur:{ui:["🎬 ریل آئیڈیا جنریٹر","روزانہ 5 نئے ریل آئیڈیاز: ہک، فارمیٹ، کیپشن اور ہیش ٹیگ۔ مفت اور آف لائن۔","اپنا ٹاپک لکھیں (اختیاری)، جیسے: protein, UPSC, momos","✨ 5 نئے آئیڈیاز دیں","ہک","فارمیٹ","ہیش ٹیگ","پوسٹ کرنے کا بہترین وقت","📋 کیپشن کاپی","✅ کاپی ہو گیا","⭐ سیو","🗑 ہٹائیں","⭐ محفوظ کردہ آئیڈیاز","ابھی کوئی محفوظ آئیڈیا نہیں ہے۔","زبان"],
+n:["فٹنس","کامیڈی","کھانا","پڑھائی","ٹیک","پیسہ","سفر","حوصلہ","فیشن","کاروبار"],
+h:["اگر آپ {t} میں یہ غلطی کر رہے ہیں تو یہ ویڈیو ضرور دیکھیں","{t} کے بارے میں 99% لوگ یہ نہیں جانتے","صرف 30 سیکنڈ میں {t} کا سب سے آسان طریقہ","{t} میں سب سے زیادہ ہونے والی 3 غلطیاں","میں نے 7 دن {t} آزمایا، نتیجہ دیکھیں","{t}: غلط فہمی بمقابلہ حقیقت","کاش مجھے {t} کے بارے میں یہ پہلے پتا ہوتا","رکیے! {t} سے پہلے یہ دیکھ لیں","POV: آپ پہلی بار {t} آزما رہے ہیں","{t} کی وہ ٹرک جو کوئی نہیں بتاتا","شروعات کرنے والوں کے لیے {t}: یہاں سے شروع کریں","{t} آپ کے لیے کام کیوں نہیں کر رہا","{t} پر ایک روپیہ خرچ کرنے سے پہلے یہ دیکھ لیں","{t} کا یہ ہیک آپ کا وقت بچائے گا"],
+f:["ٹاکنگ ہیڈ: کیمرے کی طرف دیکھیں، اہم الفاظ اسکرین پر لکھیں","لسٹ: 3 پوائنٹس، ہر ایک ~5 سیکنڈ، اسکرین پر نمبر","بیفور/آفٹر: پہلے مسئلہ، پھر حل","7 دن کا چیلنج: Day 1 سے Day 7 مونٹاژ","غلط فہمی بمقابلہ حقیقت: اسپلٹ اسکرین","POV اسکٹ: ایک سین، ایک پنچ لائن","ٹیوٹوریل: وائس اوور کے ساتھ 3 مراحل","اسٹوری ٹائم: ہک، ٹوئسٹ، سبق"],
+c:["سیو کر لیں، بعد میں کام آئے گا 📌","فالو کریں، پارٹ 2 کل آئے گا 🔥","اپنے اس دوست کو بھیجیں جسے یہ چاہیے 👇","اگر آپ کو بھی یہ پتا نہیں تھا تو کمنٹ کریں 💬","اگلا ٹاپک کون سا چاہیے؟ نیچے بتائیں ✍️"]},
+kn:{ui:["🎬 ರೀಲ್ ಐಡಿಯಾ ಜನರೇಟರ್","ಪ್ರತಿದಿನ 5 ಹೊಸ ರೀಲ್ ಐಡಿಯಾಗಳು: ಹುಕ್, ಫಾರ್ಮ್ಯಾಟ್, ಕ್ಯಾಪ್ಷನ್, ಹ್ಯಾಶ್‌ಟ್ಯಾಗ್. ಉಚಿತ, ಆಫ್‌ಲೈನ್.","ನಿಮ್ಮ ಟಾಪಿಕ್ ಬರೆಯಿರಿ (ಐಚ್ಛಿಕ), ಉದಾ: protein, UPSC, momos","✨ 5 ಹೊಸ ಐಡಿಯಾ ಕೊಡಿ","ಹುಕ್","ಫಾರ್ಮ್ಯಾಟ್","ಹ್ಯಾಶ್‌ಟ್ಯಾಗ್","ಪೋಸ್ಟ್ ಮಾಡಲು ಉತ್ತಮ ಸಮಯ","📋 ಕ್ಯಾಪ್ಷನ್ ಕಾಪಿ","✅ ಕಾಪಿ ಆಯಿತು","⭐ ಸೇವ್","🗑 ತೆಗೆಯಿರಿ","⭐ ಸೇವ್ ಮಾಡಿದ ಐಡಿಯಾಗಳು","ಇನ್ನೂ ಯಾವುದೇ ಸೇವ್ ಮಾಡಿದ ಐಡಿಯಾ ಇಲ್ಲ.","ಭಾಷೆ"],
+n:["ಫಿಟ್‌ನೆಸ್","ಕಾಮಿಡಿ","ಆಹಾರ","ಓದು","ಟೆಕ್","ಹಣ","ಪ್ರಯಾಣ","ಪ್ರೇರಣೆ","ಫ್ಯಾಷನ್","ವ್ಯಾಪಾರ"],
+h:["ನೀವು {t}ನಲ್ಲಿ ಈ ತಪ್ಪು ಮಾಡುತ್ತಿದ್ದರೆ, ಈ ವೀಡಿಯೊ ನೋಡಿ","{t} ಬಗ್ಗೆ 99% ಜನರಿಗೆ ಇದು ಗೊತ್ತಿಲ್ಲ","ಕೇವಲ 30 ಸೆಕೆಂಡ್‌ಗಳಲ್ಲಿ {t} ಮಾಡುವ ಸುಲಭ ವಿಧಾನ","{t}ನಲ್ಲಿ ಹೆಚ್ಚಾಗಿ ಆಗುವ 3 ತಪ್ಪುಗಳು","ನಾನು 7 ದಿನ {t} ಪ್ರಯತ್ನಿಸಿದೆ, ಫಲಿತಾಂಶ ನೋಡಿ","{t}: ಮಿಥ್ಯೆ vs ಸತ್ಯ","{t} ಬಗ್ಗೆ ಇದನ್ನು ಮೊದಲೇ ತಿಳಿದಿದ್ದರೆ ಚೆನ್ನಾಗಿತ್ತು","ನಿಲ್ಲಿ! {t} ಮೊದಲು ಇದನ್ನು ನೋಡಿ","POV: ನೀವು ಮೊದಲ ಬಾರಿ {t} ಪ್ರಯತ್ನಿಸುತ್ತಿದ್ದೀರಿ","{t}ನ ಯಾರೂ ಹೇಳದ ಟ್ರಿಕ್","ಆರಂಭಿಕರಿಗಾಗಿ {t}: ಇಲ್ಲಿಂದ ಶುರು ಮಾಡಿ","{t} ನಿಮಗೆ ಯಾಕೆ ಕೆಲಸ ಮಾಡುತ್ತಿಲ್ಲ","{t} ಮೇಲೆ ಒಂದು ರೂಪಾಯಿ ಖರ್ಚು ಮಾಡುವ ಮೊದಲು ಇದನ್ನು ನೋಡಿ","{t}ನ ಈ ಹ್ಯಾಕ್ ನಿಮ್ಮ ಸಮಯ ಉಳಿಸುತ್ತದೆ"],
+f:["ಟಾಕಿಂಗ್ ಹೆಡ್: ಕ್ಯಾಮೆರಾ ನೋಡಿ, ಮುಖ್ಯ ಪದಗಳನ್ನು ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಬರೆಯಿರಿ","ಪಟ್ಟಿ: 3 ಅಂಶಗಳು, ತಲಾ ~5 ಸೆಕೆಂಡ್, ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಸಂಖ್ಯೆ","ಬಿಫೋರ್/ಆಫ್ಟರ್: ಮೊದಲು ಸಮಸ್ಯೆ, ನಂತರ ಪರಿಹಾರ","7 ದಿನಗಳ ಚಾಲೆಂಜ್: Day 1 ರಿಂದ Day 7 ಮಾಂಟೇಜ್","ಮಿಥ್ಯೆ vs ಸತ್ಯ: ಸ್ಪ್ಲಿಟ್ ಸ್ಕ್ರೀನ್","POV ಸ್ಕಿಟ್: ಒಂದು ದೃಶ್ಯ, ಒಂದು ಪಂಚ್‌ಲೈನ್","ಟ್ಯುಟೋರಿಯಲ್: ವಾಯ್ಸ್‌ಓವರ್‌ನೊಂದಿಗೆ 3 ಹಂತಗಳು","ಸ್ಟೋರಿಟೈಮ್: ಹುಕ್, ಟ್ವಿಸ್ಟ್, ಪಾಠ"],
+c:["ಸೇವ್ ಮಾಡಿ, ನಂತರ ಉಪಯೋಗಕ್ಕೆ ಬರುತ್ತದೆ 📌","ಫಾಲೋ ಮಾಡಿ, ಪಾರ್ಟ್ 2 ನಾಳೆ ಬರುತ್ತದೆ 🔥","ಇದು ಬೇಕಾದ ಸ್ನೇಹಿತರಿಗೆ ಕಳುಹಿಸಿ 👇","ನಿಮಗೂ ಇದು ಗೊತ್ತಿರಲಿಲ್ಲ ಎಂದರೆ ಕಾಮೆಂಟ್ ಮಾಡಿ 💬","ಮುಂದಿನ ಟಾಪಿಕ್ ಯಾವುದು ಬೇಕು? ಕೆಳಗೆ ಹೇಳಿ ✍️"]},
+or:{ui:["🎬 ରିଲ୍ ଆଇଡିଆ ଜେନେରେଟର୍","ପ୍ରତିଦିନ ୫ଟି ନୂଆ ରିଲ୍ ଆଇଡିଆ: ହୁକ୍, ଫର୍ମାଟ୍, କ୍ୟାପସନ୍ ଓ ହ୍ୟାସଟାଗ୍। ମାଗଣା ଓ ଅଫଲାଇନ୍।","ଆପଣଙ୍କ ଟପିକ୍ ଲେଖନ୍ତୁ (ଇଚ୍ଛାଧୀନ), ଯଥା: protein, UPSC, momos","✨ ୫ଟି ନୂଆ ଆଇଡିଆ ଦିଅ","ହୁକ୍","ଫର୍ମାଟ୍","ହ୍ୟାସଟାଗ୍","ପୋଷ୍ଟ କରିବାର ସର୍ବୋତ୍ତମ ସମୟ","📋 କ୍ୟାପସନ୍ କପି","✅ କପି ହେଲା","⭐ ସେଭ୍","🗑 ହଟାନ୍ତୁ","⭐ ସେଭ୍ ହୋଇଥିବା ଆଇଡିଆ","ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ସେଭ୍ ଆଇଡିଆ ନାହିଁ।","ଭାଷା"],
+n:["ଫିଟନେସ୍","କମେଡି","ଖାଦ୍ୟ","ପଢ଼ା","ଟେକ୍","ଟଙ୍କା","ଭ୍ରମଣ","ପ୍ରେରଣା","ଫ୍ୟାସନ୍","ବ୍ୟବସାୟ"],
+h:["ଆପଣ {t}ରେ ଏହି ଭୁଲ କରୁଥିଲେ, ଏହି ଭିଡିଓ ନିଶ୍ଚୟ ଦେଖନ୍ତୁ","{t} ବିଷୟରେ ୯୯% ଲୋକ ଏହା ଜାଣନ୍ତି ନାହିଁ","ମାତ୍ର ୩୦ ସେକେଣ୍ଡରେ {t}ର ସବୁଠୁ ସହଜ ଉପାୟ","{t}ରେ ସବୁଠୁ ଅଧିକ ହେଉଥିବା ୩ଟି ଭୁଲ","ମୁଁ ୭ ଦିନ {t} ଚେଷ୍ଟା କଲି, ଫଳାଫଳ ଦେଖନ୍ତୁ","{t}: ଭ୍ରମ ବନାମ ସତ୍ୟ","{t} ବିଷୟରେ ଏହା ଆଗରୁ ଜାଣିଥିଲେ ଭଲ ହୁଅନ୍ତା","ରୁହନ୍ତୁ! {t} ପୂର୍ବରୁ ଏହା ଦେଖନ୍ତୁ","POV: ଆପଣ ପ୍ରଥମ ଥର {t} ଚେଷ୍ଟା କରୁଛନ୍ତି","{t}ର ସେହି ଟ୍ରିକ୍ ଯାହା କେହି କୁହନ୍ତି ନାହିଁ","ନୂଆମାନଙ୍କ ପାଇଁ {t}: ଏଠାରୁ ଆରମ୍ଭ କରନ୍ତୁ","{t} ଆପଣଙ୍କ ପାଇଁ କାହିଁକି କାମ କରୁନାହିଁ","{t} ଉପରେ ଏକ ଟଙ୍କା ଖର୍ଚ୍ଚ କରିବା ପୂର୍ବରୁ ଏହା ଦେଖନ୍ତୁ","{t}ର ଏହି ହ୍ୟାକ୍ ଆପଣଙ୍କ ସମୟ ବଞ୍ଚାଇବ"],
+f:["ଟକିଂ ହେଡ୍: କ୍ୟାମେରାକୁ ଦେଖନ୍ତୁ, ମୁଖ୍ୟ ଶବ୍ଦ ସ୍କ୍ରିନରେ ଲେଖନ୍ତୁ","ତାଲିକା: ୩ଟି ପଏଣ୍ଟ, ପ୍ରତ୍ୟେକ ~୫ ସେକେଣ୍ଡ, ସ୍କ୍ରିନରେ ନମ୍ବର","ବିଫୋର/ଆଫ୍ଟର: ପ୍ରଥମେ ସମସ୍ୟା, ତା'ପରେ ସମାଧାନ","୭ ଦିନର ଚ୍ୟାଲେଞ୍ଜ: Day 1 ରୁ Day 7 ମଣ୍ଟାଜ୍","ଭ୍ରମ ବନାମ ସତ୍ୟ: ସ୍ପ୍ଲିଟ୍ ସ୍କ୍ରିନ୍","POV ସ୍କିଟ୍: ଗୋଟିଏ ଦୃଶ୍ୟ, ଗୋଟିଏ ପଞ୍ଚଲାଇନ୍","ଟ୍ୟୁଟୋରିଆଲ୍: ଭଏସଓଭର ସହ ୩ ସ୍ଟେପ୍","ଷ୍ଟୋରିଟାଇମ୍: ହୁକ୍, ଟ୍ୱିଷ୍ଟ୍, ଶିକ୍ଷା"],
+c:["ସେଭ୍ କରି ରଖନ୍ତୁ, ପରେ କାମରେ ଆସିବ 📌","ଫଲୋ କରନ୍ତୁ, ପାର୍ଟ ୨ ଆସୁଛି 🔥","ଯେଉଁ ବନ୍ଧୁକୁ ଏହା ଦରକାର ତାଙ୍କୁ ପଠାନ୍ତୁ 👇","ଆପଣ ମଧ୍ୟ ଏହା ଜାଣି ନଥିଲେ କମେଣ୍ଟ କରନ୍ତୁ 💬","ପରବର୍ତ୍ତୀ ଟପିକ୍ କେଉଁଟି ଚାହାଁନ୍ତି? ତଳେ କୁହନ୍ତୁ ✍️"]},
+ml:{ui:["🎬 റീൽ ഐഡിയ ജനറേറ്റർ","ദിവസവും 5 പുതിയ റീൽ ഐഡിയകൾ: ഹുക്ക്, ഫോർമാറ്റ്, ക്യാപ്ഷൻ, ഹാഷ്ടാഗ്. സൗജന്യം, ഓഫ്‌ലൈൻ.","നിങ്ങളുടെ ടോപ്പിക് എഴുതൂ (ഓപ്ഷണൽ), ഉദാ: protein, UPSC, momos","✨ 5 പുതിയ ഐഡിയ തരൂ","ഹുക്ക്","ഫോർമാറ്റ്","ഹാഷ്ടാഗ്","പോസ്റ്റ് ചെയ്യാൻ ഏറ്റവും നല്ല സമയം","📋 ക്യാപ്ഷൻ കോപ്പി","✅ കോപ്പി ചെയ്തു","⭐ സേവ്","🗑 നീക്കുക","⭐ സേവ് ചെയ്ത ഐഡിയകൾ","ഇതുവരെ സേവ് ചെയ്ത ഐഡിയകളില്ല.","ഭാഷ"],
+n:["ഫിറ്റ്നസ്","കോമഡി","ഭക്ഷണം","പഠനം","ടെക്","പണം","യാത്ര","പ്രചോദനം","ഫാഷൻ","ബിസിനസ്"],
+h:["{t}-ൽ ഈ തെറ്റ് നിങ്ങൾ ചെയ്യുന്നുണ്ടെങ്കിൽ, ഈ വീഡിയോ കാണൂ","{t} നെക്കുറിച്ച് 99% പേർക്കും ഇത് അറിയില്ല","വെറും 30 സെക്കൻഡിൽ {t} ചെയ്യാനുള്ള എളുപ്പവഴി","{t}-ൽ ഏറ്റവും കൂടുതൽ സംഭവിക്കുന്ന 3 തെറ്റുകൾ","ഞാൻ 7 ദിവസം {t} പരീക്ഷിച്ചു, ഫലം കാണൂ","{t}: മിഥ്യ vs യാഥാർത്ഥ്യം","{t} നെക്കുറിച്ച് ഇത് നേരത്തെ അറിഞ്ഞിരുന്നെങ്കിൽ","നിൽക്കൂ! {t} ചെയ്യുന്നതിന് മുമ്പ് ഇത് കാണൂ","POV: നിങ്ങൾ ആദ്യമായി {t} പരീക്ഷിക്കുന്നു","ആരും പറയാത്ത {t} ട്രിക്ക്","തുടക്കക്കാർക്കായി {t}: ഇവിടെ നിന്ന് തുടങ്ങൂ","{t} നിങ്ങൾക്ക് എന്തുകൊണ്ട് വർക്ക് ചെയ്യുന്നില്ല","{t}-ന് ഒരു രൂപ ചെലവാക്കുന്നതിന് മുമ്പ് ഇത് കാണൂ","ഈ {t} ഹാക്ക് നിങ്ങളുടെ സമയം ലാഭിക്കും"],
+f:["ടോക്കിംഗ് ഹെഡ്: ക്യാമറയിൽ നോക്കൂ, പ്രധാന വാക്കുകൾ സ്ക്രീനിൽ എഴുതൂ","ലിസ്റ്റ്: 3 പോയിന്റുകൾ, ഓരോന്നും ~5 സെക്കൻഡ്, സ്ക്രീനിൽ നമ്പർ","ബിഫോർ/ആഫ്റ്റർ: ആദ്യം പ്രശ്നം, പിന്നെ പരിഹാരം","7 ദിവസത്തെ ചലഞ്ച്: Day 1 മുതൽ Day 7 മൊണ്ടാഷ്","മിഥ്യ vs വസ്തുത: സ്പ്ലിറ്റ് സ്ക്രീൻ","POV സ്കിറ്റ്: ഒരു സീൻ, ഒരു പഞ്ച്‌ലൈൻ","ട്യൂട്ടോറിയൽ: വോയ്സ്ഓവറോടെ 3 ഘട്ടങ്ങൾ","സ്റ്റോറിടൈം: ഹുക്ക്, ട്വിസ്റ്റ്, പാഠം"],
+c:["സേവ് ചെയ്തുവെക്കൂ, പിന്നീട് ഉപകരിക്കും 📌","ഫോളോ ചെയ്യൂ, പാർട്ട് 2 നാളെ വരും 🔥","ഇത് ആവശ്യമുള്ള സുഹൃത്തിന് അയക്കൂ 👇","നിങ്ങൾക്കും ഇത് അറിയില്ലായിരുന്നെങ്കിൽ കമന്റ് ചെയ്യൂ 💬","അടുത്ത ടോപ്പിക് ഏതാണ് വേണ്ടത്? താഴെ പറയൂ ✍️"]},
+pa:{ui:["🎬 ਰੀਲ ਆਈਡੀਆ ਜਨਰੇਟਰ","ਹਰ ਰੋਜ਼ 5 ਨਵੇਂ ਰੀਲ ਆਈਡੀਏ: ਹੁੱਕ, ਫਾਰਮੈਟ, ਕੈਪਸ਼ਨ ਤੇ ਹੈਸ਼ਟੈਗ। ਮੁਫ਼ਤ ਤੇ ਔਫਲਾਈਨ।","ਆਪਣਾ ਟੌਪਿਕ ਲਿਖੋ (ਵਿਕਲਪਿਕ), ਜਿਵੇਂ: protein, UPSC, momos","✨ 5 ਨਵੇਂ ਆਈਡੀਏ ਦਿਓ","ਹੁੱਕ","ਫਾਰਮੈਟ","ਹੈਸ਼ਟੈਗ","ਪੋਸਟ ਕਰਨ ਦਾ ਸਭ ਤੋਂ ਵਧੀਆ ਸਮਾਂ","📋 ਕੈਪਸ਼ਨ ਕਾਪੀ","✅ ਕਾਪੀ ਹੋ ਗਿਆ","⭐ ਸੇਵ","🗑 ਹਟਾਓ","⭐ ਸੇਵ ਕੀਤੇ ਆਈਡੀਏ","ਹਜੇ ਕੋਈ ਸੇਵ ਕੀਤਾ ਆਈਡੀਆ ਨਹੀਂ ਹੈ।","ਭਾਸ਼ਾ"],
+n:["ਫਿਟਨੈੱਸ","ਕਾਮੇਡੀ","ਖਾਣਾ","ਪੜ੍ਹਾਈ","ਟੈਕ","ਪੈਸਾ","ਸਫ਼ਰ","ਪ੍ਰੇਰਣਾ","ਫੈਸ਼ਨ","ਕਾਰੋਬਾਰ"],
+h:["ਜੇ ਤੁਸੀਂ {t} ਵਿੱਚ ਇਹ ਗਲਤੀ ਕਰ ਰਹੇ ਹੋ, ਤਾਂ ਇਹ ਵੀਡੀਓ ਜ਼ਰੂਰ ਦੇਖੋ","{t} ਬਾਰੇ 99% ਲੋਕ ਇਹ ਨਹੀਂ ਜਾਣਦੇ","ਸਿਰਫ਼ 30 ਸਕਿੰਟ ਵਿੱਚ {t} ਦਾ ਸਭ ਤੋਂ ਆਸਾਨ ਤਰੀਕਾ","{t} ਵਿੱਚ ਸਭ ਤੋਂ ਵੱਧ ਹੋਣ ਵਾਲੀਆਂ 3 ਗਲਤੀਆਂ","ਮੈਂ 7 ਦਿਨ {t} ਅਜ਼ਮਾਇਆ, ਨਤੀਜਾ ਦੇਖੋ","{t}: ਭਰਮ ਬਨਾਮ ਸੱਚ","ਕਾਸ਼ ਮੈਨੂੰ {t} ਬਾਰੇ ਇਹ ਪਹਿਲਾਂ ਪਤਾ ਹੁੰਦਾ","ਰੁਕੋ! {t} ਤੋਂ ਪਹਿਲਾਂ ਇਹ ਦੇਖੋ","POV: ਤੁਸੀਂ ਪਹਿਲੀ ਵਾਰ {t} ਅਜ਼ਮਾ ਰਹੇ ਹੋ","{t} ਦੀ ਉਹ ਟ੍ਰਿਕ ਜੋ ਕੋਈ ਨਹੀਂ ਦੱਸਦਾ","ਸ਼ੁਰੂਆਤ ਕਰਨ ਵਾਲਿਆਂ ਲਈ {t}: ਇੱਥੋਂ ਸ਼ੁਰੂ ਕਰੋ","{t} ਤੁਹਾਡੇ ਲਈ ਕੰਮ ਕਿਉਂ ਨਹੀਂ ਕਰ ਰਿਹਾ","{t} ਉੱਤੇ ਇੱਕ ਰੁਪਿਆ ਖਰਚਣ ਤੋਂ ਪਹਿਲਾਂ ਇਹ ਦੇਖੋ","{t} ਦਾ ਇਹ ਹੈਕ ਤੁਹਾਡਾ ਸਮਾਂ ਬਚਾਏਗਾ"],
+f:["ਟਾਕਿੰਗ ਹੈੱਡ: ਕੈਮਰੇ ਵੱਲ ਦੇਖੋ, ਜ਼ਰੂਰੀ ਸ਼ਬਦ ਸਕ੍ਰੀਨ ਉੱਤੇ ਲਿਖੋ","ਲਿਸਟ: 3 ਪੁਆਇੰਟ, ਹਰ ਇੱਕ ~5 ਸਕਿੰਟ, ਸਕ੍ਰੀਨ ਉੱਤੇ ਨੰਬਰ","ਬਿਫੋਰ/ਆਫਟਰ: ਪਹਿਲਾਂ ਸਮੱਸਿਆ, ਫਿਰ ਹੱਲ","7 ਦਿਨ ਦਾ ਚੈਲੇਂਜ: Day 1 ਤੋਂ Day 7 ਮੌਂਟਾਜ","ਭਰਮ ਬਨਾਮ ਸੱਚ: ਸਪਲਿਟ ਸਕ੍ਰੀਨ","POV ਸਕਿੱਟ: ਇੱਕ ਸੀਨ, ਇੱਕ ਪੰਚਲਾਈਨ","ਟਿਊਟੋਰਿਅਲ: ਵੌਇਸਓਵਰ ਨਾਲ 3 ਸਟੈੱਪ","ਸਟੋਰੀਟਾਈਮ: ਹੁੱਕ, ਟਵਿਸਟ, ਸਬਕ"],
+c:["ਸੇਵ ਕਰ ਲਓ, ਬਾਅਦ ਵਿੱਚ ਕੰਮ ਆਵੇਗਾ 📌","ਫਾਲੋ ਕਰੋ, ਪਾਰਟ 2 ਕੱਲ੍ਹ ਆਵੇਗਾ 🔥","ਜਿਸ ਦੋਸਤ ਨੂੰ ਇਹ ਚਾਹੀਦਾ ਉਸਨੂੰ ਭੇਜੋ 👇","ਜੇ ਤੁਹਾਨੂੰ ਵੀ ਇਹ ਨਹੀਂ ਪਤਾ ਸੀ ਤਾਂ ਕਮੈਂਟ ਕਰੋ 💬","ਅਗਲਾ ਟੌਪਿਕ ਕਿਹੜਾ ਚਾਹੀਦਾ? ਹੇਠਾਂ ਦੱਸੋ ✍️"]}
+};
+
+/* ---------- State ---------- */
+const $=id=>document.getElementById(id);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+let lang="hn",nicheIdx=0,ideas=[],saved=[];
+try{const s=JSON.parse(localStorage.getItem("reelPrefs")||"{}");if(T[s.lang])lang=s.lang;if(s.n>=0&&s.n<NICHES.length)nicheIdx=s.n;saved=JSON.parse(localStorage.getItem("reelSaved")||"[]")}catch(e){}
+const prefs=()=>{try{localStorage.setItem("reelPrefs",JSON.stringify({lang,n:nicheIdx}))}catch(e){}};
+const persist=()=>{try{localStorage.setItem("reelSaved",JSON.stringify(saved))}catch(e){}};
+const U=i=>T[lang].ui[i];
+
+/* ---------- UI ---------- */
+function applyLang(){
+  document.documentElement.lang=lang==="hn"?"hi-Latn":lang;
+  document.documentElement.dir=lang==="ur"?"rtl":"ltr";
+  document.title=U(0).replace("🎬 ","");
+  $("title").textContent=U(0);$("sub").textContent=U(1);$("topic").placeholder=U(2);
+  $("go").textContent=U(3);$("langLabel").textContent=T.en.ui[14]+" / "+U(14);$("savedTitle").textContent=U(12);
+  drawChips();
+}
+function drawChips(){
+  const c=$("chips");c.innerHTML="";
+  NICHES.forEach((n,i)=>{const b=document.createElement("button");b.className="chip"+(i===nicheIdx?" on":"");b.textContent=T[lang].n[i];b.onclick=()=>{nicheIdx=i;prefs();drawChips()};c.appendChild(b)});
+}
+function gen(){
+  const custom=$("topic").value.trim(),n=NICHES[nicheIdx],d=T[lang];
+  const hooks=shuffle(d.h).slice(0,5),topics=shuffle(n.t);
+  ideas=hooks.map((h,i)=>{const t=custom||topics[i%topics.length];
+    const hook=h.split("{t}").join(t);
+    const tags=[...shuffle(n.h).slice(0,4),LTAG[lang],pick(["reels","reelsindia","viral","trending","explorepage"])].map(x=>"#"+x).join(" ");
+    return{hook,format:pick(d.f),time:pick(TIMES),caption:hook+"\n\n"+pick(d.c),tags,
+      L:{hook:U(4),fmt:U(5),tags:U(6),time:U(7),copy:U(8),copied:U(9),save:U(10),del:U(11)}}});
+  render();
+}
+function card(x,i,isSaved){
+  return `<div class="card"><p class="tag">${x.L.hook}</p><p class="hook">${esc(x.hook)}</p>
+  <p class="tag">${x.L.fmt}</p><p>${esc(x.format)}</p>
+  <p class="tag">${x.L.time}</p><p>⏰ ${x.time}</p>
+  <p class="tag">${x.L.tags}</p><p class="hash">${esc(x.tags)}</p>
+  <div class="acts"><button data-a="copy" data-i="${i}" data-s="${isSaved?1:0}">${x.L.copy}</button>
+  <button data-a="${isSaved?"del":"save"}" data-i="${i}">${isSaved?x.L.del:x.L.save}</button></div></div>`;
+}
+function render(){
+  $("out").innerHTML=ideas.map((x,i)=>card(x,i,false)).join("");
+  $("saved").innerHTML=saved.length?saved.map((x,i)=>card(x,i,true)).join(""):`<p class="empty">${U(13)}</p>`;
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button[data-a]");if(!b)return;
+  const i=+b.dataset.i,a=b.dataset.a,list=b.dataset.s==="1"?saved:ideas;
+  if(a==="copy"){const x=list[i],t=x.caption+"\n\n"+x.tags;
+    (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{b.textContent=x.L.copied}).catch(()=>{b.textContent="Select & copy"})}
+  if(a==="save"){saved.unshift(ideas[i]);persist();render()}
+  if(a==="del"){saved.splice(i,1);persist();render()}
+});
+$("lang").innerHTML=LANGS.map(([k,n])=>`<option value="${k}">${n}</option>`).join("");
+$("lang").value=lang;
+$("lang").onchange=e=>{lang=e.target.value;prefs();applyLang();gen()};
+$("go").onclick=gen;
+applyLang();gen();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+</script>
+</body>
+</html>
